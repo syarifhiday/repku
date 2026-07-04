@@ -11,7 +11,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
+        $user       = auth()->user();
         $enrollment = $user->activeEnrollment()->with('program')->first();
 
         $calendar = null;
@@ -19,7 +19,7 @@ class DashboardController extends Controller
             $calendar = $this->generateCalendar($enrollment);
         }
 
-        $totalSessions = $user->workoutSessions()->count();
+        $totalSessions    = $user->workoutSessions()->count();
         $thisWeekSessions = $user->workoutSessions()
             ->whereBetween('session_date', [now()->startOfWeek(), now()->endOfWeek()])
             ->count();
@@ -29,9 +29,12 @@ class DashboardController extends Controller
 
     public function generateCalendar(ProgramEnrollment $enrollment): array
     {
-        $startDate       = $enrollment->started_at->copy()->startOfDay();
-        $totalDays       = $enrollment->program->duration_weeks * 7;
-        $sessionsPerWeek = $enrollment->program->sessions_per_week;
+        $startDate = $enrollment->started_at->copy()->startOfDay();
+        $totalDays = $enrollment->program->duration_weeks * 7;
+
+        // Jadwal mingguan: array 7 elemen [Mon..Sun]
+        // nilai = program day number, null = rest
+        $weeklySchedule = $enrollment->program->resolvedWeeklySchedule();
 
         $overrides = ProgramScheduleOverride::where('program_enrollment_id', $enrollment->id)
             ->get()->keyBy(fn ($o) => $o->date->toDateString());
@@ -48,9 +51,12 @@ class DashboardController extends Controller
             $date    = $startDate->copy()->addDays($i);
             $dateStr = $date->toDateString();
 
-            $dayInWeek     = $i % 7;
-            $isBaseWorkout = $dayInWeek < $sessionsPerWeek;
-            $baseDayNumber = $isBaseWorkout ? ($dayInWeek + 1) : null;
+            // Hari ke-berapa dalam siklus minggu ini (0=Mon, 6=Sun)
+            // Carbon: dayOfWeek 0=Sun, 1=Mon. Kita normalize ke 0=Mon
+            $dow = (($date->dayOfWeek + 6) % 7); // 0=Mon..6=Sun
+
+            $isBaseWorkout = $weeklySchedule[$dow] !== null;
+            $baseDayNumber = $weeklySchedule[$dow]; // null atau integer
 
             $override = $overrides[$dateStr] ?? null;
             $session  = $sessions[$dateStr]  ?? null;
@@ -77,6 +83,7 @@ class DashboardController extends Controller
                 'date'                 => $dateStr,
                 'day_num'              => (int) $date->format('j'),
                 'day_of_week'          => $date->format('D'),
+                'dow_index'            => $dow, // 0=Mon..6=Sun
                 'is_today'             => $date->equalTo($today),
                 'is_past'              => $date->lt($today),
                 'is_base_workout'      => $isBaseWorkout,
@@ -93,10 +100,10 @@ class DashboardController extends Controller
 
             $monthKey = $date->format('Y-m');
             if (!isset($byMonth[$monthKey])) {
+                // Offset blank cells: mulai dari Senin, cek hari pertama bulan ini
                 $firstOfMonth = $date->copy()->startOfMonth();
-                $dow = ((int) $firstOfMonth->format('N')) - 1;
-                $blanks = [];
-                for ($b = 0; $b < $dow; $b++) $blanks[] = null;
+                $firstDow     = ($firstOfMonth->dayOfWeek + 6) % 7; // 0=Mon
+                $blanks = array_fill(0, $firstDow, null);
 
                 $byMonth[$monthKey] = [
                     'label' => $date->format('F Y'),
@@ -126,7 +133,7 @@ class DashboardController extends Controller
 
     private function resolveStatus(Carbon $date, Carbon $today, bool $isEffectiveWorkout, $override, $session): string
     {
-        if ($session)                             return 'done';
+        if ($session)                              return 'done';
         if ($override?->override_type === 'skip') return 'skip';
         if (!$isEffectiveWorkout)                 return 'rest';
         if ($date->lt($today))                    return 'missed';

@@ -17,13 +17,17 @@ class ResistanceBandFullBodySeeder extends Seeder
 
         $slug = Str::slug('Full Body Resistance Band 4x Week Upper Lower');
 
+        // weekly_schedule: index 0=Senin, 6=Minggu
+        // Senin=Upper(1), Selasa=Lower(2), Rabu=Rest, Kamis=Upper(3), Jumat=Lower(4), Sabtu=Rest, Minggu=Rest
+        $weeklySchedule = [1, 2, null, 3, 4, null, null];
+
         $program = Program::updateOrCreate(
             ['slug' => $slug],
             [
                 'name'              => 'Full Body Resistance Band — Upper/Lower 4x/Minggu',
                 'slug'              => $slug,
-                'goal'              => 'full_body_muscle',
-                'description'       => 'Program Upper/Lower Split 4x seminggu menggunakan resistance band. Senin & Kamis = Upper Body (dada, punggung, bahu, lengan), Selasa & Jumat = Lower Body (kaki, glute, core). Rabu, Sabtu, Minggu = Rest. Berdasarkan prinsip melatih tiap otot 2x/minggu untuk hipertrofi dan kekuatan optimal dengan alat minimal.',
+                'goal'              => 'full_body',
+                'description'       => 'Program Upper/Lower Split 4x seminggu menggunakan resistance band. Senin & Kamis = Upper Body, Selasa & Jumat = Lower Body. Rabu, Sabtu, Minggu = Rest. Tidak ada 4 hari latihan berturut-turut.',
                 'duration_weeks'    => 8,
                 'sessions_per_week' => 4,
                 'type'              => 'preset',
@@ -31,77 +35,54 @@ class ResistanceBandFullBodySeeder extends Seeder
                 'location_type'     => 'rumah',
                 'equipment_tags'    => ['resistance_band'],
                 'cover_image_path'  => null,
+                'weekly_schedule'   => $weeklySchedule,
             ]
         );
 
         $program->programExercises()->delete();
 
         $days = [
-            // ── DAY 1: SENIN — Upper Body A ─────────────────────────
-            // Fokus: Dada + Punggung (push & pull horizontal)
-            // Volume: 4 gerakan utama + 2 isolasi
+            // Day 1: SENIN — Upper A (Push focus)
             1 => [
-                // Push horizontal
-                ['Resistance Band Chest Press',         4, 12],
-                ['Resistance Band Fly',                 3, 15],
-                // Pull horizontal
-                ['Resistance Band Row',                 4, 12],
-                ['Resistance Band Pull-Apart',          3, 15],
-                // Bahu
-                ['Resistance Band Shoulder Press',      3, 12],
-                ['Resistance Band Lateral Raise',       3, 15],
-                // Arm finish
-                ['Resistance Band Bicep Curl',          3, 12],
-                ['Resistance Band Tricep Pushdown',     3, 12],
+                ['Resistance Band Chest Press',     4, 12],
+                ['Resistance Band Fly',             3, 15],
+                ['Resistance Band Row',             4, 12],
+                ['Resistance Band Pull-Apart',      3, 15],
+                ['Resistance Band Shoulder Press',  3, 12],
+                ['Resistance Band Lateral Raise',   3, 15],
+                ['Resistance Band Bicep Curl',      3, 12],
+                ['Resistance Band Tricep Pushdown', 3, 12],
             ],
-
-            // ── DAY 2: SELASA — Lower Body A ────────────────────────
-            // Fokus: Quad + Glute dominan
+            // Day 2: SELASA — Lower A (Quad + Glute focus)
             2 => [
-                // Compound lower
                 ['Resistance Band Squat',               4, 15],
                 ['Resistance Band Hip Thrust',          4, 15],
                 ['Resistance Band Romanian Deadlift',   3, 12],
-                // Isolasi glute
                 ['Resistance Band Lateral Walk',        3, 20],
                 ['Resistance Band Kickback',            3, 15],
                 ['Resistance Band Clamshell',           3, 20],
-                // Core
                 ['Plank',                               3, 45],
                 ['Resistance Band Pallof Press',        3, 12],
             ],
-
-            // ── DAY 3: KAMIS — Upper Body B ─────────────────────────
-            // Fokus: Punggung + Bahu (pull vertikal & rear delt)
-            // Sedikit berbeda dari Day 1 untuk variasi stimulus
+            // Day 3: KAMIS — Upper B (Pull focus)
             3 => [
-                // Pull vertikal (simulasi lat pulldown)
-                ['Resistance Band Row',                 4, 10],
-                ['Resistance Band Face Pull',           4, 15],
-                ['Resistance Band Pull-Apart',          3, 20],
-                // Push overhead
-                ['Resistance Band Shoulder Press',      4, 10],
-                ['Resistance Band Lateral Raise',       3, 15],
-                // Chest
-                ['Resistance Band Chest Press',         3, 12],
-                // Arm finish
-                ['Resistance Band Bicep Curl',          3, 15],
-                ['Resistance Band Tricep Pushdown',     3, 15],
+                ['Resistance Band Row',             4, 10],
+                ['Resistance Band Face Pull',       4, 15],
+                ['Resistance Band Pull-Apart',      3, 20],
+                ['Resistance Band Shoulder Press',  4, 10],
+                ['Resistance Band Lateral Raise',   3, 15],
+                ['Resistance Band Chest Press',     3, 12],
+                ['Resistance Band Bicep Curl',      3, 15],
+                ['Resistance Band Tricep Pushdown', 3, 15],
             ],
-
-            // ── DAY 4: JUMAT — Lower Body B ─────────────────────────
-            // Fokus: Hamstring + Glute dominan (lebih hip-hinge)
+            // Day 4: JUMAT — Lower B (Hamstring + Glute focus)
             4 => [
-                // Hip hinge dominan
                 ['Resistance Band Romanian Deadlift',   4, 12],
                 ['Resistance Band Hip Thrust',          4, 20],
-                // Squat variasi
                 ['Resistance Band Squat',               3, 20],
-                // Isolasi glute
                 ['Resistance Band Clamshell',           3, 20],
                 ['Resistance Band Lateral Walk',        3, 20],
                 ['Resistance Band Kickback',            3, 15],
-                // Core finish
                 ['Resistance Band Woodchopper',         3, 12],
                 ['Plank',                               3, 60],
             ],
